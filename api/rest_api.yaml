@@ -1,0 +1,553 @@
+openapi: 3.0.3
+info:
+  title: Travel Posts API
+  description: API для публикации постов о путешествиях с фотографиями и оценками
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Основной сервер
+
+paths:
+  /photos:
+    post:
+      summary: Загрузить фото
+      description: Загружает новое фото и возвращает информацию о нем
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Файл изображения
+      responses:
+        '200':
+          description: Фото успешно загружено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  url:
+                    type: string
+                    format: uri
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /users/{userId}/posts:
+    post:
+      summary: Создать пост пользователя
+      description: Создает новый пост от имени указанного пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - text
+                - location
+                - photoIds
+              properties:
+                title:
+                  type: string
+                  maxLength: 50
+                text:
+                  type: string
+                  maxLength: 500
+                location:
+                  type: object
+                  properties:
+                    placeId:
+                      type: string
+                    name:
+                      type: string
+                    coordinates:
+                      type: object
+                      properties:
+                        lat:
+                          type: number
+                          format: float
+                        lng:
+                          type: number
+                          format: float
+                photoIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 3
+      responses:
+        '200':
+          description: Пост успешно создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_at:
+                    type: string
+                    format: date-time
+                  user_id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                    maxLength: 50
+                  text:
+                    type: string
+                    maxLength: 500
+                  location:
+                    type: object
+                    properties:
+                      placeId:
+                        type: string
+                      name:
+                        type: string
+                      coordinates:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                            format: float
+                          lng:
+                            type: number
+                            format: float
+                  photos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        url:
+                          type: string
+                          format: uri
+        '404':
+          description: User not found
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /posts/{postId}/reactions:
+    post:
+      summary: Оценить пост
+      description: Добавляет или изменяет реакцию (лайк/дизлайк) на пост
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: integer
+                  enum: [1, -1, 0]
+                  description: 1 for like, -1 for dislike, 0 to remove reaction
+      responses:
+        '200':
+          description: Реакция успешно обновлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_at:
+                    type: string
+                    format: date-time
+                  user_id:
+                    type: string
+                    format: uuid
+                  post_id:
+                    type: string
+                    format: uuid
+                  amount:
+                    type: integer
+        '404':
+          description: Post not found
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /posts/{postId}/comments:
+    post:
+      summary: Добавить комментарий к посту
+      description: Создает новый комментарий к указанному посту
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - comment
+              properties:
+                comment:
+                  type: string
+                  maxLength: 200
+      responses:
+        '200':
+          description: Комментарий успешно добавлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_at:
+                    type: string
+                    format: date-time
+                  user_id:
+                    type: string
+                    format: uuid
+                  commented_user_id:
+                    type: string
+                    format: uuid
+                  comment:
+                    type: string
+                    maxLength: 200
+        '404':
+          description: Post not found
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /users/{userId}/subscriptions:
+    post:
+      summary: Подписаться/отписаться от пользователя
+      description: Управляет подпиской текущего пользователя на указанного пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [subscribe, unsubscribe]
+      responses:
+        '200':
+          description: Статус подписки успешно обновлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_at:
+                    type: string
+                    format: date-time
+                  user_id:
+                    type: string
+                    format: uuid
+                  subscribed_user_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [active, inactive]
+        '404':
+          description: User to subscribe to not found
+        '400':
+          description: Bad request
+        '500':
+          description: Server error
+
+  /users/{userId}/feed:
+    get:
+      summary: Получить ленту пользователя
+      description: Возвращает ленту постов от пользователей, на которых подписан указанный пользователь, в обратном хронологическом порядке
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Лента постов успешно получена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        created_at:
+                          type: string
+                          format: date-time
+                        user_id:
+                          type: string
+                          format: uuid
+                        title:
+                          type: string
+                          maxLength: 50
+                        text:
+                          type: string
+                          maxLength: 500
+                        location:
+                          type: object
+                          properties:
+                            placeId:
+                              type: string
+                            name:
+                              type: string
+                            coordinates:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                  format: float
+                                lng:
+                                  type: number
+                                  format: float
+                        photos:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              url:
+                                type: string
+                                format: uri
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+  /places:
+    get:
+      summary: Поиск мест и популярных направлений
+      description: Возвращает список мест для путешествий. Можно искать по названию или получить популярные места
+      parameters:
+        - name: q
+          in: query
+          description: Поисковый запрос для поиска мест по названию
+          schema:
+            type: string
+        - name: popular
+          in: query
+          description: Если true, возвращает популярные места для путешествий
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Список мест успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  places:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        placeId:
+                          type: string
+                        name:
+                          type: string
+                        coordinates:
+                          type: object
+                          properties:
+                            lat:
+                              type: number
+                              format: float
+                            lng:
+                              type: number
+                              format: float
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '500':
+          description: Server error
+
+  /places/{placeId}/posts:
+    get:
+      summary: Получить посты с определенного места
+      description: Возвращает все посты, связанные с указанным местом путешествия
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Список постов с места успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        created_at:
+                          type: string
+                          format: date-time
+                        user_id:
+                          type: string
+                          format: uuid
+                        title:
+                          type: string
+                          maxLength: 50
+                        text:
+                          type: string
+                          maxLength: 500
+                        location:
+                          type: object
+                          properties:
+                            placeId:
+                              type: string
+                            name:
+                              type: string
+                            coordinates:
+                              type: object
+                              properties:
+                                lat:
+                                  type: number
+                                  format: float
+                                lng:
+                                  type: number
+                                  format: float
+                        photos:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              url:
+                                type: string
+                                format: uri
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '404':
+          description: Place not found
+        '500':
+          description: Server error
