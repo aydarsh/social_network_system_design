@@ -204,6 +204,68 @@ paths:
         '500':
           description: Server error
 
+  /posts/{postId}/reactions:
+    get:
+      summary: Получить реакции поста
+      description: Возвращает список реакций (лайков/дизлайков) для указанного поста
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Список реакций успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        created_at:
+                          type: string
+                          format: date-time
+                        user_id:
+                          type: string
+                          format: uuid
+                        post_id:
+                          type: string
+                          format: uuid
+                        amount:
+                          type: integer
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '404':
+          description: Post not found
+        '500':
+          description: Server error
+
   /posts/{postId}/comments:
     post:
       summary: Добавить комментарий к посту
@@ -254,6 +316,69 @@ paths:
           description: Post not found
         '400':
           description: Bad request
+        '500':
+          description: Server error
+
+  /posts/{postId}/comments:
+    get:
+      summary: Получить комментарии поста
+      description: Возвращает список комментариев для указанного поста
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Список комментариев успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        created_at:
+                          type: string
+                          format: date-time
+                        user_id:
+                          type: string
+                          format: uuid
+                        commented_user_id:
+                          type: string
+                          format: uuid
+                        comment:
+                          type: string
+                          maxLength: 400
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '404':
+          description: Post not found
         '500':
           description: Server error
 
