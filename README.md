@@ -119,3 +119,80 @@ Comment
 - Traffic (write image) = 25 MB/s
 - Traffic (read text) = 20 MB/s + 60 KB/s + 30 MB/s = 50 MB/s
 - Traffic (read image) = 20 GB/s
+
+
+## Модель данных
+[скриншот](database/travel-db-diagram.png) из dbdiagram.io
+
+```
+Table users {
+  id uuid [primary key]
+  username varchar(50) [not null]
+  email varchar(100) [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table places {
+  id varchar [primary key]
+  name varchar(200) [not null]
+  lat decimal(10, 8)
+  lng decimal(10, 8)
+}
+
+Table photos {
+  id uuid [primary key]
+  url varchar(500) [not null]
+}
+
+Table posts {
+  id uuid [primary key]
+  user_id uuid [not null]
+  title varchar(50) [not null]
+  text varchar(500) [not null]
+  place_id varchar [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table post_photos {
+  id uuid [primary key]
+  post_id uuid [not null]
+  photo_id uuid [not null]
+}
+
+Table reactions {
+  id uuid [primary key]
+  user_id uuid [not null]
+  post_id uuid [not null]
+  amount smallint [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table comments {
+  id uuid [primary key]
+  user_id uuid [not null]
+  post_id uuid [not null]
+  commented_user_id uuid [not null]
+  comment varchar(200) [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Table subscriptions {
+  id uuid [primary key]
+  user_id uuid [not null]
+  subscribed_user_id uuid [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: posts.user_id > users.id
+Ref: posts.place_id > places.id
+Ref: post_photos.post_id > posts.id
+Ref: post_photos.photo_id > photos.id
+Ref: reactions.user_id > users.id
+Ref: reactions.post_id > posts.id
+Ref: comments.user_id > users.id
+Ref: comments.post_id > posts.id
+Ref: comments.commented_user_id > users.id
+Ref: subscriptions.user_id > users.id
+Ref: subscriptions.subscribed_user_id > users.id
+```
+
