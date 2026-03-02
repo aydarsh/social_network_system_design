@@ -1,0 +1,74 @@
+@startuml
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь")
+
+' System Boundary
+System_Boundary(travel_system, "Соцсеть для путешественников") {
+    
+    ' Frontend Containers
+    Container(mobile_app, "Мобильное приложение", "React Native", "Мобильное приложение для iOS и Android для доступа к функциям социальной сети")
+    Container(web_app, "Веб-приложение", "React.js", "Веб-версия социальной сети с полным функционалом")
+    
+    ' API Gateway
+    Container(api_gateway, "API Gateway", "", "Маршрутизация запросов, аутентификация, rate limiting, балансировка нагрузки")
+    
+    ' Backend Services
+    Container(user_service, "Сервис пользователей", "", "Управление профилями пользователей, аутентификацией, подписками")
+    Container(post_service, "Сервис постов", "", "Создание, хранение и получение постов с фотографиями")
+    Container(feed_service, "Сервис ленты", "", "Формирование персонализированной ленты на основе подписок")
+    Container(reaction_service, "Сервис реакций", "", "Обработка лайков, дизлайков и других реакций")
+    Container(comment_service, "Сервис комментариев", "", "Управление комментариями к постам")
+    Container(search_service, "Сервис поиска", "", "Поиск постов, пользователей и популярных мест")
+    
+    ' Message Queue
+    ContainerDb(message_queue, "Message Queue", "", "Асинхронная передача сообщений между сервисами")
+    
+    ' Databases
+    ContainerDb(user_db, "База пользователей", "PostgreSQL", "Хранение данных пользователей и подписок (шардированная)")
+    ContainerDb(post_db, "База постов", "PostgreSQL", "Хранение постов и метаданных (шардированная)")
+    ContainerDb(reaction_db, "База реакций", "PostgreSQL", "Хранение лайков и реакций (шардированная)")
+    ContainerDb(comment_db, "База комментариев", "PostgreSQL", "Хранение комментариев (шардированная)")
+    ContainerDb(search_db, "Поисковая база", "", "Индекс для полнотекстового поиска")
+    
+    ' Cache
+    ContainerDb(cache, "Кэш", "Redis Cluster", "Кэширование горячих данных, сессий, ленты")
+    
+    ' File Storage
+    ContainerDb(file_storage, "Файловое хранилище", "", "Хранение изображений и медиа файлов")
+}
+
+' Relationships - Frontend to API Gateway
+Rel(user, mobile_app, "Использует", "Mobile App")
+Rel(user, web_app, "Использует", "Web Browser")
+Rel(mobile_app, api_gateway, "HTTPS API", "REST")
+Rel(web_app, api_gateway, "HTTPS API", "REST")
+
+' Relationships - API Gateway to Services
+Rel(api_gateway, user_service, "HTTPS API", "REST")
+Rel(api_gateway, post_service, "HTTPS API", "REST")
+Rel(api_gateway, feed_service, "HTTPS API", "REST")
+Rel(api_gateway, reaction_service, "HTTPS API", "REST")
+Rel(api_gateway, comment_service, "HTTPS API", "REST")
+Rel(api_gateway, search_service, "HTTPS API", "REST")
+
+' Relationships - Services to Databases
+Rel(user_service, user_db, "Читает/записывает", "JDBC")
+Rel(post_service, post_db, "Читает/записывает", "JDBC")
+Rel(reaction_service, reaction_db, "Читает/записывает", "JDBC")
+Rel(comment_service, comment_db, "Читает/записывает", "JDBC")
+Rel(search_service, search_db, "Индексирует/ищет", "HTTP API")
+Rel(feed_service, cache, "Читает/записывает", "Redis Protocol")
+Rel(user_service, cache, "Читает/записывает", "Redis Protocol")
+
+' Relationships - File Storage
+Rel(post_service, file_storage, "Загружает/читает", "S3 API")
+
+' Relationships - Message Queue
+Rel(post_service, message_queue, "Публикует события", "AMQP/Kafka Protocol")
+Rel(reaction_service, message_queue, "Публикует события", "AMQP/Kafka Protocol")
+Rel(comment_service, message_queue, "Публикует события", "AMQP/Kafka Protocol")
+Rel(feed_service, message_queue, "Подписывается на события", "AMQP/Kafka Protocol")
+
+@enduml

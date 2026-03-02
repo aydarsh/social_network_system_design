@@ -1,0 +1,9 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь")
+Container(core_system, "Core System", "Соцсеть для путешественников", "Соцсеть для обмена медиафайлами с описанием поездок")
+
+Rel(user, core_system, "Публикация постов, оценка и комментарии постов, подписки на других путешественников", "REST")
+
+@enduml
